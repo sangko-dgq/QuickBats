@@ -58,11 +58,34 @@ color 07
 echo 当前工作目录: %CD%
 
 echo '--------------------------------------------------------'
-rem :NomalMode
-REM 提示用户输入项目名称，使用默认值 "VUE_pj_ + 系统时间" 如果用户没有输入
-set "defaultProjectName=VUE_pj_test_-%year%_%month%_%day%_%hour%%minute%"
-set /p "projectName= [?]请输入项目名称 [默认值 %defaultProjectName%]: "
+REM 设置默认项目名称
+set "defaultProjectName=vue_pj_test_-%year%_%month%_%day%_%hour%%minute%"
+
+REM 提示用户输入项目名称
+set /p "projectName=[?]请输入小写开头的英文的项目名称 [默认值 %defaultProjectName%]: "
+
+REM 如果用户未输入，则使用默认项目名称
 if not defined projectName set "projectName=%defaultProjectName%"
+
+:validateProjectName
+REM 使用 PowerShell 检查是否包含中文字符
+for /f %%a in ('powershell -command "[regex]::IsMatch('!projectName!', '[\p{IsCJKUnifiedIdeographs}]')"') do set "containsChinese=%%a"
+
+REM 替换项目名称中的空格为下划线
+set "projectName=!projectName: =_!"
+
+if not !containsChinese! == True (
+    echo 项目名称: !projectName!
+) else (
+    echo [!]错误！禁止中文字符作为项目名称！请重新输入！
+    set /p "projectName=[?]请输入小写字母和数字的项目名称 [默认值 %defaultProjectName%]: "
+    goto :validateProjectName
+)
+
+
+rem 如果用户输入 将用户输入的项目名称一律转换为小写
+if defined projectName set "projectName=!projectName:~0,1!!projectName:~1!"
+
 
 echo '--------------------------------------------------------'
 echo 创建VUE工程目录
@@ -132,16 +155,22 @@ echo /* Additional CSS content */ >> "src\assets\main.css"
 
 REM 清空 App.vue 文件内容
 set "appVue=src\App.vue"
+
 (
   echo ^<script setup^>^</script^>
   echo ^<template^>
-  echo   ^<div class="navbar navbar-expand-lg navbar-dark bg-primary"^>
+  echo   ^<div class="navbar navbar-expand-lg"^
+  echo        style="background: linear-gradient(to right, #ff69b4, #00ff00)"^>
   echo     ^<div class="container"^>
+  echo       ^<img src="https://v5.bootcss.com/docs/5.3/assets/img/guides/bootstrap-vite.png" alt="Bootstrap Logo" class="mb-4" /^>
+  echo       ^<h1 class="display-4"^>HELLO bootstrap^</h1^>
   echo     ^</div^>
   echo   ^</div^>
   echo ^</template^>
   echo ^<style^>^</style^>
 ) > "!appVue!"
+
+
 
 
 REM 追加内容到 src/main.js 文件
@@ -153,7 +182,6 @@ echo main.js 文件更新完成。
 echo 文件清理完成。
 
 
-pause
 
  
  echo '--------------------------------------------------------'
@@ -162,7 +190,6 @@ cd "%projectName%"
 call npm run dev
 
 pause
-goto :menu
 
 
 ) else (
@@ -173,7 +200,7 @@ cd "%projectName%"
 call npm run dev
 
 pause
-goto :menu
+
 )
 
 
